@@ -1,16 +1,24 @@
-An AI Platform built with Next.js 13, React, Tailwind usign external API from OpenAI and Replicate AI. Clerk is used for authenticating users.
+# promptForge
 
-Features:
+**promptForge** is an AI-powered SaaS platform that brings multiple AI capabilities together in one unified interface. Transform your creative process with cutting-edge AI technology for conversations, code generation, and music creation.
 
-- Tailwind design
-- Tailwind animations and effects
-- Full responsiveness
-- Clerk Authentication (Email, Google, Github, Linkedin)
-- Client form validation and handling using react-hook-form
-- Image Generation Tool (Open AI)
-- Conversation Generation Tool (Open AI)
-- Music Generation Tool (Replicate AI)
-- Page loading state
+## What It Does
+
+promptForge offers three core AI-powered features:
+
+- **AI Conversation** - Engage in intelligent conversations powered by OpenAI's GPT-3.5-turbo for creative brainstorming, problem-solving, and general inquiries
+- **Code Generation** - Generate high-quality code snippets and solutions using advanced AI models to accelerate your development workflow
+- **Music Generation** - Create unique music compositions from text descriptions using Replicate's Riffusion AI model
+
+## Features
+
+- Modern UI with Tailwind CSS design system
+- Smooth animations and transitions
+- Fully responsive across all devices
+- Secure authentication via Clerk (Email, Google, Github, LinkedIn)
+- Form validation and handling with react-hook-form
+- Real-time AI generation tools
+- Loading states and user feedback
 
 ```shell
 git clone 

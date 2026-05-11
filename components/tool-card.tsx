@@ -34,15 +34,15 @@ export const ToolCard = ({
   }
 
   return (
-    <Card onClick={onClick} className="group cursor-pointer">
+    <Card onClick={onClick} className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:scale-[1.02]">
       <CardHeader>
         <CardTitle className="text-lg font-bold flex items-center">
-        <div className="relative h-8 w-8 mr-2 group-hover:scale-125 transition duration-150">
+        <div className="relative h-8 w-8 mr-2 group-hover:scale-125 transition-transform duration-300">
           <Image alt="Icon" src={src} fill />
         </div>
           {title}
         </CardTitle>
-        <CardDescription>{description}</CardDescription>
+        <CardDescription className="group-hover:text-gray-700 transition-colors">{description}</CardDescription>
         {premium && (
           <CardContent className="p-0">
             <Badge variant="premium" className="uppercase">pro</Badge>

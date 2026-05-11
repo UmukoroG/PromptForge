@@ -6,8 +6,8 @@ import './globals.css'
 const font = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'SimpleAI',
-  description: 'AI Platform',
+  title: 'promptForge - AI-Powered Creative Platform',
+  description: 'Transform your ideas with AI. Generate conversations, code, and music with promptForge.',
 }
 
 export default async function RootLayout({
