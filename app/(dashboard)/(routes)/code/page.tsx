@@ -21,6 +21,7 @@ import { Loader } from "@/components/loader";
 import { UserAvatar } from "@/components/user-avatar";
 import { Empty } from "@/components/ui/empty";
 import { useProModal } from "@/hooks/use-pro-modal";
+import { getErrorMessage } from "@/lib/error-handler";
 
 import { formSchema } from "./constants";
 
@@ -48,10 +49,15 @@ const CodePage = () => {
       
       form.reset();
     } catch (error: any) {
+      console.log('[CODE_PAGE] Error caught:', error);
+      console.log('[CODE_PAGE] Error response:', error?.response);
+
       if (error?.response?.status === 403) {
         proModal.onOpen();
       } else {
-        toast.error("Something went wrong.");
+        const errorMessage = getErrorMessage(error);
+        console.log('[CODE_PAGE] Displaying error:', errorMessage);
+        toast.error(errorMessage);
       }
     } finally {
       router.refresh();

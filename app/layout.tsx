@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { ClerkProvider } from '@clerk/nextjs'
+import { ToastProvider } from '@/components/toast-provider'
 import './globals.css'
 
 const font = Inter({ subsets: ['latin'] });
@@ -19,6 +20,7 @@ export default async function RootLayout({
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
         <body className={font.className}>
+          <ToastProvider />
           {children}
         </body>
       </html>

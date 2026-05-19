@@ -16,6 +16,7 @@ import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
 import { Loader } from "@/components/loader";
 import { Empty } from "@/components/ui/empty";
 import { useProModal } from "@/hooks/use-pro-modal";
+import { getErrorMessage } from "@/lib/error-handler";
 
 import { formSchema } from "./constants";
 
@@ -43,10 +44,16 @@ const MusicPage = () => {
       setMusic(response.data.audio);
       form.reset();
     } catch (error: any) {
+      console.log('[MUSIC_PAGE] Error caught:', error);
+      console.log('[MUSIC_PAGE] Error response:', error?.response);
+
       if (error?.response?.status === 403) {
         proModal.onOpen();
       } else {
-        toast.error("Something went wrong.");
+        // Extract and display human-readable error message
+        const errorMessage = getErrorMessage(error);
+        console.log('[MUSIC_PAGE] Displaying error:', errorMessage);
+        toast.error(errorMessage);
       }
     } finally {
       router.refresh();
