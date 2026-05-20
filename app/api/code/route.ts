@@ -4,6 +4,7 @@ import { ChatCompletionRequestMessage, Configuration, OpenAIApi } from "openai";
 import { withRetry } from "@/lib/retry";
 import { incrementApiLimit, checkApiLimit } from "@/lib/api-limit";
 import { checkSubscription } from "@/lib/subscription";
+import { ratelimit } from "@/lib/rate-limit";
 
 
 const configuration = new Configuration({
@@ -27,6 +28,17 @@ export async function POST(
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Rate limiting: 5 requests per minute
+    const identifier = userId;
+    const { success } = await ratelimit.limit(identifier);
+
+    if (!success) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded. You can make 5 requests per minute." },
+        { status: 429 }
+      );
     }
 
     if (!configuration.apiKey) {

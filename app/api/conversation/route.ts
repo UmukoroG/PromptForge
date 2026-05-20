@@ -4,6 +4,8 @@ import { Configuration, OpenAIApi } from "openai";
 import { withRetry } from "@/lib/retry";
 import { incrementApiLimit, checkApiLimit } from "@/lib/api-limit";
 import { checkSubscription } from "@/lib/subscription";
+import { ratelimit } from "@/lib/rate-limit";
+import { createConversation, addMessage } from "@/lib/conversation";
 
 
 const configuration = new Configuration({
@@ -18,10 +20,21 @@ export async function POST(
   try {
     const { userId } = auth();
     const body = await req.json();
-    const { messages  } = body;
+    const { messages, conversationId } = body;
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Rate limiting: 5 requests per minute
+    const identifier = userId;
+    const { success } = await ratelimit.limit(identifier);
+
+    if (!success) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded. You can make 5 requests per minute." },
+        { status: 429 }
+      );
     }
 
     if (!configuration.apiKey) {
@@ -46,6 +59,19 @@ export async function POST(
       }
     }
 
+    // Create or get conversation
+    let currentConversationId = conversationId;
+    if (!currentConversationId) {
+      const conversation = await createConversation();
+      currentConversationId = conversation.id;
+    }
+
+    // Save user message to database
+    const userMessage = messages[messages.length - 1];
+    if (userMessage && userMessage.role === "user") {
+      await addMessage(currentConversationId, "user", userMessage.content);
+    }
+
     const response = await withRetry(
       () =>
         openai.createChatCompletion({
@@ -57,12 +83,22 @@ export async function POST(
       }
     );
 
+    const assistantMessage = response.data.choices[0].message;
+
+    // Save assistant response to database
+    if (assistantMessage && assistantMessage.content) {
+      await addMessage(currentConversationId, "assistant", assistantMessage.content);
+    }
+
     // Increment API usage count if not pro
     if (!isPro) {
       await incrementApiLimit();
     }
 
-    return NextResponse.json(response.data.choices[0].message);
+    return NextResponse.json({
+      ...assistantMessage,
+      conversationId: currentConversationId,
+    });
   } catch (error: any) {
     console.log('[CONVERSATION_ERROR]', error);
 

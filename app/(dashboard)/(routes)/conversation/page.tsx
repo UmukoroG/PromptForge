@@ -4,7 +4,7 @@ import * as z from "zod";
 import axios from "axios";
 import { MessageSquare } from "lucide-react";
 import { useForm } from "react-hook-form";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { ChatCompletionRequestMessage } from "openai";
@@ -21,13 +21,17 @@ import { UserAvatar } from "@/components/user-avatar";
 import { Empty } from "@/components/ui/empty";
 import { useProModal } from "@/hooks/use-pro-modal";
 import { getErrorMessage } from "@/lib/error-handler";
+import { useConversation } from "@/hooks/use-conversation";
+import { MobileConversationHistory } from "@/components/mobile-conversation-history";
 
 import { formSchema } from "./constants";
 
 const ConversationPage = () => {
   const router = useRouter();
   const proModal = useProModal();
+  const { conversationId, setConversationId } = useConversation();
   const [messages, setMessages] = useState<ChatCompletionRequestMessage[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -37,15 +41,51 @@ const ConversationPage = () => {
   });
 
   const isLoading = form.formState.isSubmitting;
-  
+
+  // Load conversation history when conversationId changes
+  useEffect(() => {
+    const loadConversation = async () => {
+      if (!conversationId) {
+        setMessages([]);
+        return;
+      }
+
+      try {
+        setIsLoadingHistory(true);
+        const response = await axios.get(`/api/conversations/${conversationId}`);
+        const loadedMessages = response.data.messages.map((msg: any) => ({
+          role: msg.role,
+          content: msg.content,
+        }));
+        setMessages(loadedMessages);
+      } catch (error) {
+        console.error("Failed to load conversation:", error);
+        toast.error("Failed to load conversation history");
+      } finally {
+        setIsLoadingHistory(false);
+      }
+    };
+
+    loadConversation();
+  }, [conversationId]);
+
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       const userMessage: ChatCompletionRequestMessage = { role: "user", content: values.prompt };
       const newMessages = [...messages, userMessage];
-      
-      const response = await axios.post('/api/conversation', { messages: newMessages });
+
+      const response = await axios.post('/api/conversation', {
+        messages: newMessages,
+        conversationId
+      });
+
+      // Update conversation ID if it's a new conversation
+      if (response.data.conversationId && !conversationId) {
+        setConversationId(response.data.conversationId);
+      }
+
       setMessages((current) => [...current, userMessage, response.data]);
-      
+
       form.reset();
     } catch (error: any) {
       console.log('[CONVERSATION_PAGE] Error caught:', error);
@@ -63,15 +103,20 @@ const ConversationPage = () => {
     }
   }
 
-  return ( 
+  return (
     <div>
-      <Heading
-        title="Conversation"
-        description="Our most advanced conversation model."
-        icon={MessageSquare}
-        iconColor="text-violet-500"
-        bgColor="bg-violet-500/10"
-      />
+      <div className="flex items-center justify-between">
+        <Heading
+          title="Conversation"
+          description="Our most advanced conversation model."
+          icon={MessageSquare}
+          iconColor="text-violet-500"
+          bgColor="bg-violet-500/10"
+        />
+        <div className="pr-4">
+          <MobileConversationHistory />
+        </div>
+      </div>
       <div className="px-4 lg:px-8">
         <div>
           <Form {...form}>
@@ -112,18 +157,24 @@ const ConversationPage = () => {
           </Form>
         </div>
         <div className="space-y-4 mt-4">
+          {isLoadingHistory && (
+            <div className="p-8 rounded-lg w-full flex items-center justify-center bg-muted">
+              <Loader />
+              <p className="ml-2 text-sm text-muted-foreground">Loading conversation...</p>
+            </div>
+          )}
           {isLoading && (
             <div className="p-8 rounded-lg w-full flex items-center justify-center bg-muted">
               <Loader />
             </div>
           )}
-          {messages.length === 0 && !isLoading && (
+          {messages.length === 0 && !isLoading && !isLoadingHistory && (
             <Empty label="No conversation started." />
           )}
           <div className="flex flex-col-reverse gap-y-4">
-            {messages.map((message) => (
-              <div 
-                key={message.content} 
+            {messages.map((message, index) => (
+              <div
+                key={`${message.content}-${index}`}
                 className={cn(
                   "p-8 w-full flex items-start gap-x-8 rounded-lg",
                   message.role === "user" ? "bg-white border border-black/10" : "bg-muted",

@@ -23,6 +23,7 @@
 - Secure authentication via Clerk (Email, Google, GitHub, LinkedIn)
 - Form validation with react-hook-form and zod
 - Retry logic with exponential backoff for API calls
+- **Rate Limiting** - 5 requests per minute per user using Upstash Redis
 - Graceful error handling with user-friendly messages
 - PostgreSQL database with Prisma ORM
 - Stripe Elements for secure payment processing
@@ -37,6 +38,7 @@
 - **Database:** Supabase (PostgreSQL)
 - **ORM:** Prisma
 - **Payment:** Stripe
+- **Rate Limiting:** Upstash Redis
 - **AI APIs:** OpenAI, Replicate
 - **State Management:** Zustand
 - **Form Handling:** React Hook Form + Zod
@@ -48,7 +50,7 @@
 
 - Node.js 18+ installed
 - npm or yarn package manager
-- Accounts for: Clerk, Supabase, Stripe, OpenAI, Replicate
+- Accounts for: Clerk, Supabase, Stripe, OpenAI, Replicate, Upstash
 
 ### Installation
 
@@ -95,8 +97,11 @@ NEXT_PUBLIC_APP_URL="http://localhost:3000"
 STRIPE_API_KEY=
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
 STRIPE_WEBHOOK_SECRET=
-```
 
+# Upstash Redis (Rate Limiting)
+UPSTASH_REDIS_REST_URL=
+UPSTASH_REDIS_REST_TOKEN=
+```
 
 
 ### Running the Application
@@ -147,9 +152,10 @@ Manages Pro subscriptions
 - `stripePriceId` - Stripe price ID
 - `stripeCurrentPeriodEnd` - Subscription period end date
 
-## Error Handling
+## Error Handling & Rate Limiting
 
 The app includes comprehensive error handling:
+- **Rate Limiting:** 5 requests per minute per user (via Upstash Redis)
 - Retry logic with exponential backoff for API failures
 - Rate limit detection and handling (429 errors)
 - Timeout enforcement (30s for conversations/code, 60s for music)
