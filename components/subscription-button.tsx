@@ -6,6 +6,7 @@ import { Zap } from "lucide-react";
 import { toast } from "react-hot-toast";
 
 import { Button } from "@/components/ui/button";
+import { useProModal } from "@/hooks/use-pro-modal";
 
 export const SubscriptionButton = ({
   isPro = false
@@ -13,8 +14,16 @@ export const SubscriptionButton = ({
   isPro: boolean;
 }) => {
   const [loading, setLoading] = useState(false);
+  const proModal = useProModal();
 
   const onClick = async () => {
+    if (!isPro) {
+      // Open modal for free users
+      proModal.onOpen();
+      return;
+    }
+
+    // For pro users, redirect to billing portal
     try {
       setLoading(true);
 

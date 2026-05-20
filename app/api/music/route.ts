@@ -2,6 +2,8 @@ import Replicate from "replicate";
 import { auth } from "@clerk/nextjs";
 import { NextResponse } from "next/server";
 import { withRetry } from "@/lib/retry";
+import { incrementApiLimit, checkApiLimit } from "@/lib/api-limit";
+import { checkSubscription } from "@/lib/subscription";
 
 const replicate = new Replicate({
   auth: process.env.REPLICATE_API_TOKEN!,
@@ -23,6 +25,20 @@ export async function POST(
       return NextResponse.json({ error: "Prompt is required" }, { status: 400 });
     }
 
+    // Check if user has active subscription
+    const isPro = await checkSubscription();
+
+    // If not pro, check API limits
+    if (!isPro) {
+      const freeTrial = await checkApiLimit();
+      if (!freeTrial) {
+        return NextResponse.json(
+          { error: "Free trial has expired. Please upgrade to pro." },
+          { status: 403 }
+        );
+      }
+    }
+
     const response = await withRetry(
       () =>
         replicate.run(
@@ -37,6 +53,11 @@ export async function POST(
         timeout: 60000, // 60 second timeout (music generation takes longer)
       }
     );
+
+    // Increment API usage count if not pro
+    if (!isPro) {
+      await incrementApiLimit();
+    }
 
     return NextResponse.json(response);
   } catch (error: any) {

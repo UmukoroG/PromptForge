@@ -2,6 +2,8 @@ import { auth } from "@clerk/nextjs";
 import { NextResponse } from "next/server";
 import { ChatCompletionRequestMessage, Configuration, OpenAIApi } from "openai";
 import { withRetry } from "@/lib/retry";
+import { incrementApiLimit, checkApiLimit } from "@/lib/api-limit";
+import { checkSubscription } from "@/lib/subscription";
 
 
 const configuration = new Configuration({
@@ -35,6 +37,19 @@ export async function POST(
       return NextResponse.json({ error: "Messages are required" }, { status: 400 });
     }
 
+    // Check if user has active subscription
+    const isPro = await checkSubscription();
+
+    // If not pro, check API limits
+    if (!isPro) {
+      const freeTrial = await checkApiLimit();
+      if (!freeTrial) {
+        return NextResponse.json(
+          { error: "Free trial has expired. Please upgrade to pro." },
+          { status: 403 }
+        );
+      }
+    }
 
     const response = await withRetry(
       () =>
@@ -47,6 +62,10 @@ export async function POST(
       }
     );
 
+    // Increment API usage count if not pro
+    if (!isPro) {
+      await incrementApiLimit();
+    }
 
     return NextResponse.json(response.data.choices[0].message);
   } catch (error: any) {
